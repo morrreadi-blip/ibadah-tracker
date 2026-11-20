@@ -231,10 +231,11 @@ function calculateDistanceToKaaba(lat, lon) {
 function updateHeaderQiblaWidget() {
   const sched = getCitySchedule(currentCity);
   const qiblaDeg = calculateQibla(sched.lat, sched.lon);
-  const degEl = document.getElementById('qibla-deg-display');
-  if (degEl) degEl.textContent = `${qiblaDeg}°`;
-  const needleEl = document.getElementById('qibla-mini-needle');
-  if (needleEl) needleEl.style.transform = `rotate(${qiblaDeg}deg)`;
+  const headerDegEl = document.getElementById('header-qibla-deg');
+  if (headerDegEl) headerDegEl.textContent = `${qiblaDeg}° Kiblat`;
+  if (typeof updateDirectQiblaCard === 'function') {
+    updateDirectQiblaCard(currentHeading, qiblaDeg);
+  }
 }
 
 // ============================================
@@ -861,66 +862,11 @@ function autoDetectLocation() {
 }
 
 // ============================================
-// KOMPAS ARAH KIBLAT (LIVE SENSOR ORIENTATION)
+// KOMPAS ARAH KIBLAT LANGSUNG (DIRECT WIDGET)
 // ============================================
 let currentHeading = 0;
 let orientationListenerActive = false;
 let lastVibrateTime = 0;
-
-function initQiblaCompass() {
-  const openBtn = document.getElementById('header-qibla-widget');
-  const closeBtn = document.getElementById('btn-close-qibla');
-  const backdrop = document.getElementById('qibla-modal-backdrop');
-  const calibrateBtn = document.getElementById('btn-calibrate-compass');
-
-  if (openBtn) {
-    openBtn.addEventListener('click', openQiblaModal);
-    openBtn.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        openQiblaModal();
-      }
-    });
-  }
-
-  if (closeBtn) closeBtn.addEventListener('click', closeQiblaModal);
-  if (backdrop) backdrop.addEventListener('click', closeQiblaModal);
-
-  if (calibrateBtn) {
-    calibrateBtn.addEventListener('click', requestCompassPermission);
-  }
-}
-
-function openQiblaModal() {
-  const modal = document.getElementById('qibla-modal');
-  if (!modal) return;
-  modal.classList.remove('hidden');
-
-  const sched = getCitySchedule(currentCity);
-  const qiblaDeg = calculateQibla(sched.lat, sched.lon);
-  const dist = calculateDistanceToKaaba(sched.lat, sched.lon);
-
-  const cityEl = document.getElementById('qibla-modal-city');
-  if (cityEl) cityEl.textContent = sched.full || currentCity;
-
-  const targetEl = document.getElementById('qibla-target-val');
-  if (targetEl) targetEl.textContent = `${qiblaDeg}°`;
-
-  const dirEl = document.getElementById('qibla-dir-text');
-  if (dirEl) dirEl.textContent = getCardinalDirection(qiblaDeg);
-
-  const distEl = document.getElementById('qibla-distance-val');
-  if (distEl) distEl.textContent = `~${dist.toLocaleString('id-ID')}`;
-
-  startCompassSensor();
-  updateCompassDisplay(currentHeading, qiblaDeg);
-}
-
-function closeQiblaModal() {
-  const modal = document.getElementById('qibla-modal');
-  if (modal) modal.classList.add('hidden');
-  stopCompassSensor();
-}
 
 function getCardinalDirection(deg) {
   const dirs = ['Utara', 'Timur Laut', 'Timur', 'Tenggara', 'Selatan', 'Barat Daya', 'Barat', 'Barat Laut'];
@@ -928,23 +874,84 @@ function getCardinalDirection(deg) {
   return dirs[idx];
 }
 
-function startCompassSensor() {
-  if (orientationListenerActive) return;
+function updateDirectQiblaCard(heading = 0, targetQiblaDeg) {
+  const sched = getCitySchedule(currentCity);
+  const qiblaDeg = targetQiblaDeg !== undefined ? targetQiblaDeg : calculateQibla(sched.lat, sched.lon);
+  const dist = calculateDistanceToKaaba(sched.lat, sched.lon);
 
-  if (window.DeviceOrientationEvent) {
-    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-      DeviceOrientationEvent.requestPermission().then(state => {
-        if (state === 'granted') {
-          attachOrientationListener();
-        }
-      }).catch(() => {});
-    } else {
-      attachOrientationListener();
+  // 1. Update Info Header & Ringkasan Kartu
+  const cityEl = document.getElementById('qibla-direct-city');
+  if (cityEl) cityEl.textContent = sched.full || currentCity;
+
+  const degEl = document.getElementById('qibla-direct-deg');
+  if (degEl) degEl.textContent = `${qiblaDeg}°`;
+
+  const dirEl = document.getElementById('qibla-direct-dir');
+  if (dirEl) dirEl.textContent = getCardinalDirection(qiblaDeg);
+
+  const headingEl = document.getElementById('current-hp-heading');
+  if (headingEl) headingEl.textContent = `${heading}° ${getCardinalDirection(heading)}`;
+
+  const distEl = document.getElementById('distance-to-kaaba');
+  if (distEl) distEl.textContent = `~${dist.toLocaleString('id-ID')} km`;
+
+  // 2. Putar Dial Kompas Berlawanan Arah Hadap Handphone
+  const dial = document.getElementById('compass-direct-dial');
+  if (dial) dial.style.transform = `rotate(${-heading}deg)`;
+
+  // 3. Jarum Ka'bah Mengarah Tepat ke Sudut Kiblat Ka'bah
+  const needle = document.getElementById('compass-direct-needle');
+  if (needle) needle.style.transform = `rotate(${qiblaDeg}deg)`;
+
+  // 4. Hitung Derajat Keselarasan Hadap HP vs Ka'bah
+  const diff = Math.abs(((qiblaDeg - heading + 540) % 360) - 180);
+  const isAligned = diff <= 4;
+
+  const ring = document.getElementById('compass-direct-ring');
+  const alignBox = document.getElementById('qibla-direct-align-box');
+  const statusIcon = document.getElementById('align-status-icon');
+  const statusMsg = document.getElementById('align-status-msg');
+
+  if (ring) ring.classList.toggle('aligned', isAligned);
+  if (alignBox) alignBox.classList.toggle('aligned', isAligned);
+
+  if (isAligned) {
+    if (statusIcon) statusIcon.textContent = '🕋';
+    if (statusMsg) statusMsg.textContent = 'Alhamdulillah, Tepat Menghadap Kiblat!';
+    const now = Date.now();
+    if (now - lastVibrateTime > 1500) {
+      lastVibrateTime = now;
+      if (navigator.vibrate) {
+        try { navigator.vibrate([60, 40, 60]); } catch (e) {}
+      }
+    }
+  } else {
+    if (statusIcon) statusIcon.textContent = '🧭';
+    if (statusMsg) {
+      const turnDir = ((qiblaDeg - heading + 360) % 360) > 180 ? 'kiri' : 'kanan';
+      statusMsg.textContent = `Putar HP sedikit ke ${turnDir} (${diff}° lagi)`;
     }
   }
 }
 
+function handleOrientation(e) {
+  let heading = 0;
+  if (e.webkitCompassHeading !== undefined && e.webkitCompassHeading !== null) {
+    // iOS Safari / WebKit
+    heading = e.webkitCompassHeading;
+  } else if (e.alpha !== null && e.alpha !== undefined) {
+    // Android Chrome / Standard
+    heading = (360 - e.alpha) % 360;
+  }
+
+  currentHeading = Math.round(heading);
+  const sched = getCitySchedule(currentCity);
+  const qiblaDeg = calculateQibla(sched.lat, sched.lon);
+  updateDirectQiblaCard(currentHeading, qiblaDeg);
+}
+
 function attachOrientationListener() {
+  if (orientationListenerActive) return;
   if ('ondeviceorientationabsolute' in window) {
     window.addEventListener('deviceorientationabsolute', handleOrientation, true);
     orientationListenerActive = true;
@@ -959,65 +966,23 @@ function stopCompassSensor() {
   window.removeEventListener('deviceorientationabsolute', handleOrientation, true);
   window.removeEventListener('deviceorientation', handleOrientation, true);
   orientationListenerActive = false;
+  updateSensorButtonUI(false);
 }
 
-function handleOrientation(e) {
-  let heading = 0;
-  if (e.webkitCompassHeading !== undefined && e.webkitCompassHeading !== null) {
-    heading = e.webkitCompassHeading;
-  } else if (e.alpha !== null && e.alpha !== undefined) {
-    heading = (360 - e.alpha) % 360;
+function updateSensorButtonUI(active) {
+  const toggleBtn = document.getElementById('btn-sensor-toggle');
+  const btnText = document.getElementById('sensor-btn-text');
+  if (toggleBtn) toggleBtn.classList.toggle('active', active);
+  if (btnText) {
+    btnText.textContent = active ? 'Sensor Kompas Aktif (Putar HP)' : 'Aktifkan Sensor Kompas HP';
   }
-
-  currentHeading = Math.round(heading);
-  const sched = getCitySchedule(currentCity);
-  const qiblaDeg = calculateQibla(sched.lat, sched.lon);
-  updateCompassDisplay(currentHeading, qiblaDeg);
 }
 
-function updateCompassDisplay(heading, qiblaDeg) {
-  const headingEl = document.getElementById('qibla-current-heading');
-  if (headingEl) headingEl.textContent = `${heading}°`;
-
-  const headingLabelEl = document.getElementById('qibla-heading-label');
-  if (headingLabelEl) headingLabelEl.textContent = getCardinalDirection(heading);
-
-  // Putar dial kompas berlawanan arah heading HP
-  const dial = document.getElementById('qibla-compass-dial');
-  if (dial) dial.style.transform = `rotate(${-heading}deg)`;
-
-  // Jarum Ka'bah menunjuk ke qiblaDeg
-  const needle = document.getElementById('qibla-dial-needle');
-  if (needle) needle.style.transform = `rotate(${qiblaDeg}deg)`;
-
-  // Hitung selisih hadap HP dan Ka'bah
-  const diff = Math.abs(((qiblaDeg - heading + 540) % 360) - 180);
-  const isAligned = diff <= 4;
-
-  const wrap = document.querySelector('.qibla-compass-wrap');
-  const statusBox = document.getElementById('qibla-status-box');
-  const statusText = document.getElementById('qibla-status-text');
-  const statusIcon = document.getElementById('qibla-status-icon');
-
-  if (wrap) wrap.classList.toggle('aligned', isAligned);
-  if (statusBox) statusBox.classList.toggle('aligned', isAligned);
-
-  if (isAligned) {
-    if (statusIcon) statusIcon.textContent = '🕋';
-    if (statusText) statusText.textContent = 'Alhamdulillah, Tepat Menghadap Kiblat!';
-    const now = Date.now();
-    if (now - lastVibrateTime > 1500) {
-      lastVibrateTime = now;
-      if (navigator.vibrate) {
-        try { navigator.vibrate([60, 40, 60]); } catch (e) {}
-      }
-    }
+function toggleCompassSensor() {
+  if (orientationListenerActive) {
+    stopCompassSensor();
   } else {
-    if (statusIcon) statusIcon.textContent = '🧭';
-    if (statusText) {
-      const turnDir = ((qiblaDeg - heading + 360) % 360) > 180 ? 'kiri' : 'kanan';
-      statusText.textContent = `Putar HP sedikit ke ${turnDir} (${diff}° lagi)`;
-    }
+    requestCompassPermission();
   }
 }
 
@@ -1026,15 +991,46 @@ function requestCompassPermission() {
     DeviceOrientationEvent.requestPermission().then(state => {
       if (state === 'granted') {
         attachOrientationListener();
-        alert('Sensor kompas HP berhasil diaktifkan!');
+        updateSensorButtonUI(true);
       } else {
         alert('Izin sensor gerak tidak diberikan.');
       }
-    }).catch(err => alert('Izin sensor: ' + err.message));
+    }).catch(err => {
+      console.log('Sensor perm error:', err);
+      attachOrientationListener();
+      updateSensorButtonUI(true);
+    });
   } else {
     attachOrientationListener();
-    alert('Sensor kompas HP sudah aktif! Putar handphone Anda untuk mencari arah Ka\'bah.');
+    updateSensorButtonUI(true);
   }
+}
+
+function startCompassSensor() {
+  if (orientationListenerActive) return;
+  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    // Browser butuh gestur pengguna (misal iOS)
+    return;
+  }
+  // Android WebView / PWA langsung aktifkan
+  attachOrientationListener();
+  if (orientationListenerActive) {
+    updateSensorButtonUI(true);
+  }
+}
+
+function initQiblaCompass() {
+  const sched = getCitySchedule(currentCity);
+  const qiblaDeg = calculateQibla(sched.lat, sched.lon);
+  updateDirectQiblaCard(currentHeading, qiblaDeg);
+
+  const toggleBtn = document.getElementById('btn-sensor-toggle');
+  if (toggleBtn) {
+    toggleBtn.onclick = toggleCompassSensor;
+  }
+
+  // Coba aktifkan sensor langsung jika platform mengizinkan
+  startCompassSensor();
 }
 
 // ============================================

@@ -97,39 +97,25 @@
         </div>
       </div>
 
-      <!-- Body Sholat & Masjid -->
+      <!-- Body Sholat & Ka'bah Badge -->
       <div class="header-prayer-body" id="header-prayer-body">
-          <!-- Konten Teks, Jam & Timer (Sisi Kiri) -->
-          <div class="next-prayer-content">
-            <div class="next-prayer-top">
-              <span class="next-prayer-badge" id="next-prayer-name">Ashar</span>
-              <span class="next-prayer-time" id="next-prayer-time">15:08</span>
-            </div>
-            <div class="next-prayer-bottom">
-              <span class="next-prayer-timer" id="countdown-timer">-- jam -- menit</span>
-            </div>
+        <!-- Konten Teks, Jam & Timer (Sisi Kiri) -->
+        <div class="next-prayer-content">
+          <div class="next-prayer-top">
+            <span class="next-prayer-badge" id="next-prayer-name">Ashar</span>
+            <span class="next-prayer-time" id="next-prayer-time">15:08</span>
           </div>
-
-          <!-- Kompas Arah Kiblat Interaktif (Menggantikan Logo Masjid) -->
-          <div class="header-qibla-widget" id="header-qibla-widget" role="button" tabindex="0" title="Buka Kompas Arah Kiblat 360°" aria-label="Buka Kompas Arah Kiblat">
-            <div class="qibla-mini-disc">
-              <div class="qibla-mini-compass" id="qibla-mini-compass">
-                <span class="qibla-cardinal n">U</span>
-                <span class="qibla-cardinal e">T</span>
-                <span class="qibla-cardinal s">S</span>
-                <span class="qibla-cardinal w">B</span>
-                <div class="qibla-needle-assembly" id="qibla-mini-needle">
-                  <div class="kaaba-icon-badge" title="Arah Ka'bah">🕋</div>
-                  <div class="qibla-needle-pointer"></div>
-                </div>
-              </div>
-            </div>
-            <div class="qibla-text-badge">
-              <span class="qibla-deg" id="qibla-deg-display">295°</span>
-              <span class="qibla-sub">Kiblat 🧭</span>
-            </div>
+          <div class="next-prayer-bottom">
+            <span class="next-prayer-timer" id="countdown-timer">-- jam -- menit</span>
           </div>
         </div>
+
+        <!-- Sisi Kanan: Badge Ringkas Ka'bah -->
+        <div class="header-kaaba-badge">
+          <span class="kaaba-glyph-big">🕋</span>
+          <span class="kaaba-sub-deg" id="header-qibla-deg">295° Kiblat</span>
+        </div>
+      </div>
 
       <!-- Streak Bar -->
       <div class="header-streak-bar">
@@ -140,6 +126,72 @@
 
     <!-- KONTEN UTAMA BERANDA -->
     <main class="app-main-content">
+
+      <!-- KARTU KOMPAS KIBLAT LANGSUNG DI BERANDA (DIRECT WIDGET) -->
+      <section class="qibla-direct-card" id="qibla-direct-card">
+        <div class="qibla-direct-header">
+          <div class="qibla-direct-title-wrap">
+            <span class="qibla-direct-icon">🧭</span>
+            <div>
+              <h3 class="qibla-direct-title">Kompas Arah Kiblat</h3>
+              <p class="qibla-direct-city" id="qibla-direct-city">Jakarta, DKI Jakarta</p>
+            </div>
+          </div>
+          <div class="qibla-direct-deg-badge">
+            <span class="deg-val" id="qibla-direct-deg">295°</span>
+            <span class="deg-dir" id="qibla-direct-dir">Barat Laut</span>
+          </div>
+        </div>
+
+        <!-- Area Kompas Interaktif Terbuka Lebar -->
+        <div class="qibla-direct-body">
+          <div class="qibla-direct-compass-stage">
+            <div class="compass-direct-outer-ring" id="compass-direct-ring"></div>
+            <div class="compass-direct-dial" id="compass-direct-dial">
+              <span class="c-mark north">U</span>
+              <span class="c-mark east">T</span>
+              <span class="c-mark south">S</span>
+              <span class="c-mark west">B</span>
+
+              <!-- Jarum Ka'bah -->
+              <div class="compass-direct-needle" id="compass-direct-needle">
+                <div class="needle-kaaba-head">
+                  <span class="kaaba-glyph">🕋</span>
+                  <span class="kaaba-text">Ka'bah</span>
+                </div>
+                <div class="needle-golden-beam"></div>
+              </div>
+            </div>
+            <!-- Center Hub -->
+            <div class="compass-direct-hub"></div>
+          </div>
+
+          <!-- Indikator Keselarasan Langsung -->
+          <div class="qibla-direct-alignment-box" id="qibla-direct-align-box">
+            <span class="align-status-icon" id="align-status-icon">🧭</span>
+            <span class="align-status-msg" id="align-status-msg">Pegang HP mendatar & putar ke arah Ka'bah</span>
+          </div>
+
+          <!-- Bar Info Tambahan: Arah HP & Jarak -->
+          <div class="qibla-direct-info-row">
+            <div class="info-pill">
+              <span class="info-label">Arah HP Saat Ini</span>
+              <strong class="info-data" id="current-hp-heading">0° Utara</strong>
+            </div>
+            <div class="info-pill">
+              <span class="info-label">Jarak ke Ka'bah</span>
+              <strong class="info-data" id="distance-to-kaaba">~7.920 km</strong>
+            </div>
+          </div>
+
+          <!-- Tombol Sensor HP Langsung di Kartu -->
+          <button type="button" class="btn-sensor-toggle" id="btn-sensor-toggle">
+            <span class="sensor-btn-icon">📱</span>
+            <span id="sensor-btn-text">Aktifkan Sensor Kompas HP</span>
+          </button>
+        </div>
+      </section>
+
       <!-- 1. Sholat Hari Ini -->
       <ul class="checklist" id="checklist"></ul>
 
@@ -180,75 +232,6 @@
         <p>Dibuat oleh <span class="footer-author">Mulyadi Suryaman</span></p>
       </footer>
     </main>
-  </div>
-
-  <!-- ===== MODAL KOMPAS ARAH KIBLAT 360° ===== -->
-  <div id="qibla-modal" class="qibla-modal hidden" role="dialog" aria-modal="true" aria-labelledby="qibla-modal-title">
-    <div class="qibla-modal-backdrop" id="qibla-modal-backdrop"></div>
-    <div class="qibla-modal-content">
-      <div class="qibla-modal-header">
-        <div class="qibla-title-group">
-          <h2 id="qibla-modal-title" class="qibla-modal-title">🧭 Kompas Arah Kiblat</h2>
-          <p class="qibla-modal-city" id="qibla-modal-city">Jakarta, DKI Jakarta</p>
-        </div>
-        <button type="button" class="qibla-btn-close" id="btn-close-qibla" aria-label="Tutup Kompas">✕</button>
-      </div>
-
-      <!-- Dial Kompas 360 Derajat -->
-      <div class="qibla-compass-wrap">
-        <div class="qibla-align-ring" id="qibla-align-ring"></div>
-        <div class="qibla-compass-dial" id="qibla-compass-dial">
-          <!-- Cardinal Marks -->
-          <span class="dial-mark cardinal-north">U</span>
-          <span class="dial-mark cardinal-east">T</span>
-          <span class="dial-mark cardinal-south">S</span>
-          <span class="dial-mark cardinal-west">B</span>
-
-          <!-- Jarum Kiblat Menunjuk Ka'bah -->
-          <div class="qibla-dial-needle" id="qibla-dial-needle">
-            <div class="dial-kaaba-marker">
-              <span class="kaaba-3d">🕋</span>
-              <span class="kaaba-tag">Ka'bah</span>
-            </div>
-            <div class="needle-body-gold"></div>
-          </div>
-        </div>
-
-        <!-- Center Hub -->
-        <div class="compass-center-hub"></div>
-      </div>
-
-      <!-- Status Keselarasan / Aligned Banner -->
-      <div class="qibla-status-box" id="qibla-status-box">
-        <span class="status-icon" id="qibla-status-icon">🧭</span>
-        <span class="status-text" id="qibla-status-text">Putar handphone hingga Ka'bah di posisi atas</span>
-      </div>
-
-      <!-- Informasi Derajat & Jarak -->
-      <div class="qibla-metrics-grid">
-        <div class="qibla-metric-card">
-          <span class="metric-label">Sudut Kiblat</span>
-          <strong class="metric-val" id="qibla-target-val">295°</strong>
-          <span class="metric-sub" id="qibla-dir-text">Barat Laut</span>
-        </div>
-        <div class="qibla-metric-card">
-          <span class="metric-label">Arah HP Saat Ini</span>
-          <strong class="metric-val" id="qibla-current-heading">0°</strong>
-          <span class="metric-sub" id="qibla-heading-label">Utara</span>
-        </div>
-        <div class="qibla-metric-card">
-          <span class="metric-label">Jarak ke Ka'bah</span>
-          <strong class="metric-val" id="qibla-distance-val">~7.920</strong>
-          <span class="metric-sub">Kilometer</span>
-        </div>
-      </div>
-
-      <!-- Panduan & Tombol Sensor -->
-      <div class="qibla-modal-footer">
-        <p class="qibla-guide-hint">💡 Pegang HP mendatar sejajar dada untuk hasil kompas paling akurat.</p>
-        <button type="button" class="btn-calibrate-compass" id="btn-calibrate-compass">Aktifkan Sensor HP</button>
-      </div>
-    </div>
   </div>
 
   <script src="app.js"></script>
