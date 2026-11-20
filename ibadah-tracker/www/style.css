@@ -352,24 +352,123 @@ body {
   gap: 5px;
 }
 
-/* Sisi Kanan: Flat Design Masjid */
-.next-prayer-art {
+/* ============================================
+   KOMPAS ARAH KIBLAT (WIDGET HEADER)
+   ============================================ */
+.header-qibla-widget {
   position: relative;
-  z-index: 1;
-  width: 120px;
-  height: 84px;
+  z-index: 2;
   display: flex;
-  align-items: flex-end;
-  justify-content: flex-end;
-  flex-shrink: 0;
-  margin-left: 6px;
-  pointer-events: none;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(255, 255, 255, 0.28);
+  border-radius: 20px;
+  padding: 8px 12px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  user-select: none;
 }
 
-.flat-mosque-svg {
+.header-qibla-widget:hover {
+  background: rgba(255, 255, 255, 0.24);
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.header-qibla-widget:active {
+  transform: scale(0.95);
+}
+
+.qibla-mini-disc {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #094e48 0%, #063c37 100%);
+  border: 2px solid #fbbf24;
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.qibla-mini-compass {
+  position: relative;
   width: 100%;
   height: 100%;
-  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.10));
+  border-radius: 50%;
+}
+
+.qibla-cardinal {
+  position: absolute;
+  font-size: 8px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1;
+}
+
+.qibla-cardinal.n { top: 2px; left: 50%; transform: translateX(-50%); color: #f87171; }
+.qibla-cardinal.s { bottom: 2px; left: 50%; transform: translateX(-50%); }
+.qibla-cardinal.e { right: 3px; top: 50%; transform: translateY(-50%); }
+.qibla-cardinal.w { left: 3px; top: 50%; transform: translateY(-50%); }
+
+.qibla-needle-assembly {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.kaaba-icon-badge {
+  font-size: 14px;
+  filter: drop-shadow(0 0 4px #fbbf24);
+  margin-top: -12px;
+  animation: float-mini 2s ease-in-out infinite;
+}
+
+@keyframes float-mini {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+.qibla-needle-pointer {
+  width: 2px;
+  height: 14px;
+  background: linear-gradient(180deg, #fbbf24, #f59e0b);
+  border-radius: 1px;
+}
+
+.qibla-text-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+}
+
+.qibla-deg {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fbbf24;
+  letter-spacing: -0.3px;
+  line-height: 1.1;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.qibla-sub {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 0.2px;
 }
 
 /* ============================================
@@ -498,56 +597,24 @@ body {
 }
 .checkbox-wrapper.animate .checkmark { animation: pop .25s ease; }
 
-/* Bell Button (Direct On / Off Toggle) */
-.bell-btn {
-  width: 36px;
-  height: 36px;
-  border: none;
-  border-radius: 10px;
-  background: transparent;
-  cursor: pointer;
-  font-size: 1.15rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all .2s cubic-bezier(0.4, 0, 0.2, 1);
-  flex-shrink: 0;
-  position: relative;
-  opacity: 0.45;
-  filter: grayscale(100%);
+/* Prayer Status Chip */
+.prayer-status-chip {
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 99px;
+  background: #f1f5f9;
+  color: #64748b;
+  letter-spacing: 0.1px;
+  transition: all .2s ease;
   user-select: none;
 }
-.bell-btn:hover {
-  background: #f1f5f9;
-  opacity: 0.75;
-}
-.bell-btn:active {
-  transform: scale(0.9);
-}
-.bell-btn.active {
-  opacity: 1;
-  filter: none;
+
+.checklist-item.checked .prayer-status-chip,
+.prayer-status-chip.done {
   background: #ccfbf1;
-  border-radius: 99px;
-  box-shadow: 0 1px 4px rgba(15, 118, 110, 0.15);
-}
-  opacity: 1;
-  filter: grayscale(0%);
-  background: #f0fdfa;
-  transform: scale(1.05);
-  box-shadow: 0 1px 4px rgba(15, 118, 110, 0.15);
-}
-.bell-btn.active::after {
-  content: '';
-  position: absolute;
-  top: 4px;
-  right: 5px;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #0f766e;
-  border: 1.5px solid #ffffff;
-  box-shadow: 0 0 4px rgba(15, 118, 110, 0.4);
+  color: #0f766e;
 }
 
 /* ============================================
@@ -1008,4 +1075,309 @@ body {
 .app-footer .footer-author {
   font-weight: 600;
   color: #0f766e;
+}
+
+/* ============================================
+   MODAL KOMPAS ARAH KIBLAT 360°
+   ============================================ */
+.qibla-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.3s;
+}
+
+.qibla-modal.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.qibla-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(8px);
+}
+
+.qibla-modal-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 420px;
+  background: #ffffff;
+  border-radius: 28px;
+  padding: 24px 20px;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  max-height: 92vh;
+  overflow-y: auto;
+  transform: translateY(0);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.qibla-modal.hidden .qibla-modal-content {
+  transform: translateY(30px) scale(0.96);
+}
+
+.qibla-modal-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.qibla-modal-title {
+  font-size: 1.22rem;
+  font-weight: 800;
+  color: #0f766e;
+  letter-spacing: -0.3px;
+}
+
+.qibla-modal-city {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.qibla-btn-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 1.1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.qibla-btn-close:hover {
+  background: #e2e8f0;
+}
+
+.qibla-btn-close:active {
+  transform: scale(0.9);
+}
+
+/* Dial Kompas 360 */
+.qibla-compass-wrap {
+  position: relative;
+  width: 230px;
+  height: 230px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 4px 0;
+}
+
+.qibla-align-ring {
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 4px dashed rgba(15, 118, 110, 0.2);
+  transition: all 0.4s ease;
+  pointer-events: none;
+}
+
+.qibla-compass-wrap.aligned .qibla-align-ring {
+  border: 4px solid #10b981;
+  box-shadow: 0 0 25px rgba(16, 185, 129, 0.5);
+  animation: pulse-ring 1.5s infinite;
+}
+
+@keyframes pulse-ring {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.04); opacity: 0.7; }
+}
+
+.qibla-compass-dial {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #f8fafc 40%, #e2e8f0 100%);
+  border: 8px solid #0f766e;
+  box-shadow: inset 0 3px 10px rgba(0, 0, 0, 0.1), 0 8px 24px rgba(15, 118, 110, 0.2);
+  transition: transform 0.15s linear;
+  will-change: transform;
+}
+
+.dial-mark {
+  position: absolute;
+  font-size: 13px;
+  font-weight: 800;
+  color: #64748b;
+  line-height: 1;
+}
+
+.dial-mark.cardinal-north { top: 10px; left: 50%; transform: translateX(-50%); color: #ef4444; }
+.dial-mark.cardinal-east { right: 10px; top: 50%; transform: translateY(-50%); }
+.dial-mark.cardinal-south { bottom: 10px; left: 50%; transform: translateX(-50%); }
+.dial-mark.cardinal-west { left: 10px; top: 50%; transform: translateY(-50%); }
+
+.qibla-dial-needle {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.15s linear;
+  will-change: transform;
+}
+
+.dial-kaaba-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-top: 14px;
+  z-index: 2;
+}
+
+.kaaba-3d {
+  font-size: 26px;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
+}
+
+.kaaba-tag {
+  font-size: 9px;
+  font-weight: 800;
+  background: #fbbf24;
+  color: #78350f;
+  padding: 1px 6px;
+  border-radius: 99px;
+  letter-spacing: 0.3px;
+}
+
+.needle-body-gold {
+  width: 4px;
+  height: 56px;
+  background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 60%, rgba(245, 158, 11, 0.1) 100%);
+  border-radius: 2px;
+  margin-top: 2px;
+}
+
+.compass-center-hub {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #0f766e;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  z-index: 3;
+}
+
+/* Status Box */
+.qibla-status-box {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #475569;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.qibla-status-box.aligned {
+  background: #ecfdf5;
+  border-color: #10b981;
+  color: #065f46;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+}
+
+/* Metrics Grid */
+.qibla-metrics-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.qibla-metric-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 10px 6px;
+  gap: 2px;
+}
+
+.qibla-metric-card .metric-label {
+  font-size: 0.65rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+}
+
+.qibla-metric-card .metric-val {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f766e;
+  line-height: 1.2;
+}
+
+.qibla-metric-card .metric-sub {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.qibla-modal-footer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.qibla-guide-hint {
+  font-size: 0.72rem;
+  color: #64748b;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.btn-calibrate-compass {
+  width: 100%;
+  padding: 11px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #0f766e, #0d9488);
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(15, 118, 110, 0.25);
+  transition: transform 0.15s, opacity 0.2s;
+}
+
+.btn-calibrate-compass:active {
+  transform: scale(0.98);
 }

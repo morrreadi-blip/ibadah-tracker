@@ -163,9 +163,9 @@ function initOnboarding() {
     mainAppEl.classList.remove('hidden');
     initRekapDropdown();
     initStatsTabs();
+    initQiblaCompass();
     renderHome();
     renderRekap();
-    startReminderCheck();
     return;
   }
   document.getElementById('btn-onboard-next').addEventListener('click', () => {
@@ -196,10 +196,45 @@ function finishOnboarding() {
     mainAppEl.classList.remove('hidden');
     initRekapDropdown();
     initStatsTabs();
+    initQiblaCompass();
     renderHome();
     renderRekap();
-    startReminderCheck();
   }, 500);
+}
+
+// ============================================
+// KALKULASI ARAH KIBLAT & JARAK KA'BAH
+// ============================================
+function calculateQibla(lat, lon) {
+  const phiK = 21.422487 * Math.PI / 180.0;
+  const lambdaK = 39.826206 * Math.PI / 180.0;
+  const phi = lat * Math.PI / 180.0;
+  const lambda = lon * Math.PI / 180.0;
+  const psi = 180.0 / Math.PI * Math.atan2(
+    Math.sin(lambdaK - lambda),
+    Math.cos(phi) * Math.tan(phiK) - Math.sin(phi) * Math.cos(lambdaK - lambda)
+  );
+  return Math.round((psi + 360.0) % 360.0);
+}
+
+function calculateDistanceToKaaba(lat, lon) {
+  const R = 6371;
+  const dLat = (21.422487 - lat) * Math.PI / 180;
+  const dLon = (39.826206 - lon) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat * Math.PI / 180) * Math.cos(21.422487 * Math.PI / 180) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return Math.round(R * c);
+}
+
+function updateHeaderQiblaWidget() {
+  const sched = getCitySchedule(currentCity);
+  const qiblaDeg = calculateQibla(sched.lat, sched.lon);
+  const degEl = document.getElementById('qibla-deg-display');
+  if (degEl) degEl.textContent = `${qiblaDeg}°`;
+  const needleEl = document.getElementById('qibla-mini-needle');
+  if (needleEl) needleEl.style.transform = `rotate(${qiblaDeg}deg)`;
 }
 
 // ============================================
@@ -207,7 +242,6 @@ function finishOnboarding() {
 // ============================================
 function renderHome() {
   const dayData = getDayData(currentDate);
-  const reminders = loadReminders();
 
   const dateLabelEl = document.getElementById('date-label');
   if (dateLabelEl) dateLabelEl.textContent = formatDateLabel(getLocalToday());
@@ -216,14 +250,16 @@ function renderHome() {
   const hsc = document.getElementById('header-streak-count');
   if (hsc) hsc.textContent = calculateStreak();
 
+  // Update widget kompas kiblat di header
+  updateHeaderQiblaWidget();
+
   const checklistEl = document.getElementById('checklist');
   checklistEl.innerHTML = '';
   const sched = getCitySchedule(currentCity);
 
   PRAYERS.forEach(prayer => {
     const isChecked = !!dayData[prayer.id];
-    const rem = reminders[prayer.id];
-    const prayerTime = sched.times[prayer.id] || rem.time;
+    const prayerTime = sched.times[prayer.id] || prayer.defaultTime;
 
     const li = document.createElement('li');
     li.className = 'checklist-item' + (isChecked ? ' checked' : '');
@@ -241,28 +277,15 @@ function renderHome() {
         <span class="prayer-name">${prayer.id}</span>
         <span class="prayer-time-sub">${prayerTime}</span>
       </span>
+      <span class="prayer-status-chip ${isChecked ? 'done' : ''}">${isChecked ? 'Sudah Sholat ✓' : 'Belum Sholat'}</span>
     `;
-
-    // Bell button (Langsung On / Off)
-    const bellBtn = document.createElement('button');
-    const isBellActive = !!rem.enabled;
-    bellBtn.className = 'bell-btn' + (isBellActive ? ' active' : '');
-    bellBtn.innerHTML = '🔔';
-    bellBtn.setAttribute('type', 'button');
-    bellBtn.setAttribute('aria-label', `Pengingat ${prayer.id}`);
-    bellBtn.setAttribute('aria-pressed', isBellActive ? 'true' : 'false');
-    bellBtn.title = isBellActive ? `Pengingat ${prayer.id} aktif (${rem.time})` : `Aktifkan pengingat ${prayer.id}`;
-    row.appendChild(bellBtn);
 
     li.appendChild(row);
     checklistEl.appendChild(li);
 
     // --- Events ---
-
-    // Checkbox toggle (click on row excluding bell)
+    // Checkbox toggle
     row.addEventListener('click', (e) => {
-      // Ignore if clicking the bell
-      if (e.target.closest('.bell-btn')) return;
       if (e.target.type === 'checkbox') return;
       const cb = row.querySelector('input[type="checkbox"]');
       cb.checked = !cb.checked;
@@ -270,32 +293,6 @@ function renderHome() {
     });
     row.querySelector('.checkbox-wrapper input').addEventListener('change', function() {
       handleToggle(prayer.id, this.checked, li);
-    });
-
-    // Bell click → Langsung toggle On / Off Pengingat
-    bellBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const r = loadReminders();
-      const currentSched = getCitySchedule(currentCity);
-      const newState = !r[prayer.id].enabled;
-      r[prayer.id].enabled = newState;
-      if (currentSched.times && currentSched.times[prayer.id]) {
-        r[prayer.id].time = currentSched.times[prayer.id];
-      }
-      saveReminders(r);
-
-      bellBtn.classList.toggle('active', newState);
-      bellBtn.setAttribute('aria-pressed', newState ? 'true' : 'false');
-      bellBtn.title = newState ? `Pengingat ${prayer.id} aktif (${r[prayer.id].time})` : `Aktifkan pengingat ${prayer.id}`;
-
-      // Minta izin notifikasi jika baru diaktifkan & tes bunyi/getar feedback
-      if (newState) {
-        if (navigator.vibrate) navigator.vibrate(40);
-        playCheckSound();
-        if ('Notification' in window && Notification.permission !== 'granted') {
-          Notification.requestPermission();
-        }
-      }
     });
   });
 
@@ -397,6 +394,11 @@ function playAlarmSound() {
 function handleToggle(prayerId, checked, li) {
   setDayPrayer(currentDate, prayerId, checked);
   li.classList.toggle('checked', checked);
+  const chip = li.querySelector('.prayer-status-chip');
+  if (chip) {
+    chip.classList.toggle('done', checked);
+    chip.textContent = checked ? 'Sudah Sholat ✓' : 'Belum Sholat';
+  }
   const wrapper = li.querySelector('.checkbox-wrapper');
   wrapper.classList.add('animate');
   setTimeout(() => wrapper.classList.remove('animate'), 300);
@@ -859,8 +861,186 @@ function autoDetectLocation() {
 }
 
 // ============================================
+// KOMPAS ARAH KIBLAT (LIVE SENSOR ORIENTATION)
+// ============================================
+let currentHeading = 0;
+let orientationListenerActive = false;
+let lastVibrateTime = 0;
+
+function initQiblaCompass() {
+  const openBtn = document.getElementById('header-qibla-widget');
+  const closeBtn = document.getElementById('btn-close-qibla');
+  const backdrop = document.getElementById('qibla-modal-backdrop');
+  const calibrateBtn = document.getElementById('btn-calibrate-compass');
+
+  if (openBtn) {
+    openBtn.addEventListener('click', openQiblaModal);
+    openBtn.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openQiblaModal();
+      }
+    });
+  }
+
+  if (closeBtn) closeBtn.addEventListener('click', closeQiblaModal);
+  if (backdrop) backdrop.addEventListener('click', closeQiblaModal);
+
+  if (calibrateBtn) {
+    calibrateBtn.addEventListener('click', requestCompassPermission);
+  }
+}
+
+function openQiblaModal() {
+  const modal = document.getElementById('qibla-modal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+
+  const sched = getCitySchedule(currentCity);
+  const qiblaDeg = calculateQibla(sched.lat, sched.lon);
+  const dist = calculateDistanceToKaaba(sched.lat, sched.lon);
+
+  const cityEl = document.getElementById('qibla-modal-city');
+  if (cityEl) cityEl.textContent = sched.full || currentCity;
+
+  const targetEl = document.getElementById('qibla-target-val');
+  if (targetEl) targetEl.textContent = `${qiblaDeg}°`;
+
+  const dirEl = document.getElementById('qibla-dir-text');
+  if (dirEl) dirEl.textContent = getCardinalDirection(qiblaDeg);
+
+  const distEl = document.getElementById('qibla-distance-val');
+  if (distEl) distEl.textContent = `~${dist.toLocaleString('id-ID')}`;
+
+  startCompassSensor();
+  updateCompassDisplay(currentHeading, qiblaDeg);
+}
+
+function closeQiblaModal() {
+  const modal = document.getElementById('qibla-modal');
+  if (modal) modal.classList.add('hidden');
+  stopCompassSensor();
+}
+
+function getCardinalDirection(deg) {
+  const dirs = ['Utara', 'Timur Laut', 'Timur', 'Tenggara', 'Selatan', 'Barat Daya', 'Barat', 'Barat Laut'];
+  const idx = Math.round(deg / 45) % 8;
+  return dirs[idx];
+}
+
+function startCompassSensor() {
+  if (orientationListenerActive) return;
+
+  if (window.DeviceOrientationEvent) {
+    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+      DeviceOrientationEvent.requestPermission().then(state => {
+        if (state === 'granted') {
+          attachOrientationListener();
+        }
+      }).catch(() => {});
+    } else {
+      attachOrientationListener();
+    }
+  }
+}
+
+function attachOrientationListener() {
+  if ('ondeviceorientationabsolute' in window) {
+    window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+    orientationListenerActive = true;
+  } else if ('ondeviceorientation' in window) {
+    window.addEventListener('deviceorientation', handleOrientation, true);
+    orientationListenerActive = true;
+  }
+}
+
+function stopCompassSensor() {
+  if (!orientationListenerActive) return;
+  window.removeEventListener('deviceorientationabsolute', handleOrientation, true);
+  window.removeEventListener('deviceorientation', handleOrientation, true);
+  orientationListenerActive = false;
+}
+
+function handleOrientation(e) {
+  let heading = 0;
+  if (e.webkitCompassHeading !== undefined && e.webkitCompassHeading !== null) {
+    heading = e.webkitCompassHeading;
+  } else if (e.alpha !== null && e.alpha !== undefined) {
+    heading = (360 - e.alpha) % 360;
+  }
+
+  currentHeading = Math.round(heading);
+  const sched = getCitySchedule(currentCity);
+  const qiblaDeg = calculateQibla(sched.lat, sched.lon);
+  updateCompassDisplay(currentHeading, qiblaDeg);
+}
+
+function updateCompassDisplay(heading, qiblaDeg) {
+  const headingEl = document.getElementById('qibla-current-heading');
+  if (headingEl) headingEl.textContent = `${heading}°`;
+
+  const headingLabelEl = document.getElementById('qibla-heading-label');
+  if (headingLabelEl) headingLabelEl.textContent = getCardinalDirection(heading);
+
+  // Putar dial kompas berlawanan arah heading HP
+  const dial = document.getElementById('qibla-compass-dial');
+  if (dial) dial.style.transform = `rotate(${-heading}deg)`;
+
+  // Jarum Ka'bah menunjuk ke qiblaDeg
+  const needle = document.getElementById('qibla-dial-needle');
+  if (needle) needle.style.transform = `rotate(${qiblaDeg}deg)`;
+
+  // Hitung selisih hadap HP dan Ka'bah
+  const diff = Math.abs(((qiblaDeg - heading + 540) % 360) - 180);
+  const isAligned = diff <= 4;
+
+  const wrap = document.querySelector('.qibla-compass-wrap');
+  const statusBox = document.getElementById('qibla-status-box');
+  const statusText = document.getElementById('qibla-status-text');
+  const statusIcon = document.getElementById('qibla-status-icon');
+
+  if (wrap) wrap.classList.toggle('aligned', isAligned);
+  if (statusBox) statusBox.classList.toggle('aligned', isAligned);
+
+  if (isAligned) {
+    if (statusIcon) statusIcon.textContent = '🕋';
+    if (statusText) statusText.textContent = 'Alhamdulillah, Tepat Menghadap Kiblat!';
+    const now = Date.now();
+    if (now - lastVibrateTime > 1500) {
+      lastVibrateTime = now;
+      if (navigator.vibrate) {
+        try { navigator.vibrate([60, 40, 60]); } catch (e) {}
+      }
+    }
+  } else {
+    if (statusIcon) statusIcon.textContent = '🧭';
+    if (statusText) {
+      const turnDir = ((qiblaDeg - heading + 360) % 360) > 180 ? 'kiri' : 'kanan';
+      statusText.textContent = `Putar HP sedikit ke ${turnDir} (${diff}° lagi)`;
+    }
+  }
+}
+
+function requestCompassPermission() {
+  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission().then(state => {
+      if (state === 'granted') {
+        attachOrientationListener();
+        alert('Sensor kompas HP berhasil diaktifkan!');
+      } else {
+        alert('Izin sensor gerak tidak diberikan.');
+      }
+    }).catch(err => alert('Izin sensor: ' + err.message));
+  } else {
+    attachOrientationListener();
+    alert('Sensor kompas HP sudah aktif! Putar handphone Anda untuk mencari arah Ka\'bah.');
+  }
+}
+
+// ============================================
 // INIT
 // ============================================
 autoDetectLocation();
 startLiveTimer();
+initQiblaCompass();
 initOnboarding();
