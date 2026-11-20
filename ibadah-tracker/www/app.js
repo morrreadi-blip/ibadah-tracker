@@ -232,7 +232,9 @@ function updateHeaderQiblaWidget() {
   const sched = getCitySchedule(currentCity);
   const qiblaDeg = calculateQibla(sched.lat, sched.lon);
   const headerDegEl = document.getElementById('header-qibla-deg');
-  if (headerDegEl) headerDegEl.textContent = `${qiblaDeg}° Kiblat`;
+  if (headerDegEl) headerDegEl.textContent = `${qiblaDeg}°`;
+  const miniNeedle = document.getElementById('header-mini-needle');
+  if (miniNeedle) miniNeedle.style.transform = `rotate(${qiblaDeg}deg)`;
   if (typeof updateDirectQiblaCard === 'function') {
     updateDirectQiblaCard(currentHeading, qiblaDeg);
   }
@@ -895,24 +897,28 @@ function updateDirectQiblaCard(heading = 0, targetQiblaDeg) {
   const distEl = document.getElementById('distance-to-kaaba');
   if (distEl) distEl.textContent = `~${dist.toLocaleString('id-ID')} km`;
 
-  // 2. Putar Dial Kompas Berlawanan Arah Hadap Handphone
-  const dial = document.getElementById('compass-direct-dial');
+  // 2. Putar Piringan Dial Kompas Berlawanan Arah Hadap Handphone (-heading)
+  const dial = document.getElementById('compass-rotating-dial');
   if (dial) dial.style.transform = `rotate(${-heading}deg)`;
 
-  // 3. Jarum Ka'bah Mengarah Tepat ke Sudut Kiblat Ka'bah
-  const needle = document.getElementById('compass-direct-needle');
-  if (needle) needle.style.transform = `rotate(${qiblaDeg}deg)`;
+  // 3. Jarum Kompas Biasa: Ujung Merah Selalu Menunjuk ke Arah Utara Magnetik
+  const needle = document.getElementById('classic-magnetic-needle');
+  if (needle) needle.style.transform = `rotate(${-heading}deg)`;
 
-  // 4. Hitung Derajat Keselarasan Hadap HP vs Ka'bah
+  // 4. Update Marker Kiblat pada Dial (Sesuai Sudut Kiblat Kota)
+  const qMarker = document.getElementById('compass-qibla-marker');
+  if (qMarker) qMarker.setAttribute('transform', `rotate(${qiblaDeg} 120 120)`);
+
+  // 5. Hitung Derajat Keselarasan Hadap HP vs Ka'bah
   const diff = Math.abs(((qiblaDeg - heading + 540) % 360) - 180);
   const isAligned = diff <= 4;
 
-  const ring = document.getElementById('compass-direct-ring');
+  const bezelRing = document.getElementById('compass-bezel-outer');
   const alignBox = document.getElementById('qibla-direct-align-box');
   const statusIcon = document.getElementById('align-status-icon');
   const statusMsg = document.getElementById('align-status-msg');
 
-  if (ring) ring.classList.toggle('aligned', isAligned);
+  if (bezelRing) bezelRing.classList.toggle('aligned', isAligned);
   if (alignBox) alignBox.classList.toggle('aligned', isAligned);
 
   if (isAligned) {
