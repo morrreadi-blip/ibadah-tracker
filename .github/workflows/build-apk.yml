@@ -1,0 +1,54 @@
+name: Build Android APK                                                                                       
+                                                                                                                  
+    on:                                                                                                           
+      push:                                                                                                       
+        branches: [ "main", "master" ]                                                                            
+      workflow_dispatch:                                                                                          
+                                                                                                                  
+    permissions:                                                                                                  
+      contents: write                                                                                             
+                                                                                                                  
+    jobs:                                                                                                         
+      build:                                                                                                      
+        name: Build Debug APK                                                                                     
+        runs-on: ubuntu-latest                                                                                    
+                                                                                                                  
+        steps:                                                                                                    
+          - name: Checkout Code                                                                                   
+            uses: actions/checkout@v4                                                                             
+                                                                                                                  
+          - name: Set up Java JDK 21                                                                              
+            uses: actions/setup-java@v4                                                                           
+            with:                                                                                                 
+              distribution: 'zulu'                                                                                
+              java-version: '21'                                                                                  
+              cache: 'gradle'                                                                                     
+                                                                                                                  
+          - name: Set up Node.js 22                                                                               
+            uses: actions/setup-node@v4                                                                           
+            with:                                                                                                 
+              node-version: 22                                                                                    
+              cache: 'npm'                                                                                        
+              cache-dependency-path: ibadah-tracker/package-lock.json                                             
+                                                                                                                  
+          - name: Install dependencies & Build assets                                                             
+            working-directory: ./ibadah-tracker                                                                   
+            run: |                                                                                                
+              npm ci || npm install                                                                               
+              node build.js                                                                                       
+              npx cap sync android                                                                                
+                                                                                                                  
+          - name: Make Gradlew Executable                                                                         
+            working-directory: ./ibadah-tracker/android                                                           
+            run: chmod +x gradlew                                                                                 
+                                                                                                                  
+          - name: Build Debug APK with Gradle                                                                     
+            working-directory: ./ibadah-tracker/android                                                           
+            run: ./gradlew assembleDebug --no-daemon --stacktrace                                                 
+                                                                                                                  
+          - name: Upload APK Artifact                                                                             
+            uses: actions/upload-artifact@v4                                                                      
+            with:                                                                                                 
+              name: IbadahTracker-Debug-APK                                                                       
+              path: ibadah-tracker/android/app/build/outputs/apk/debug/*.apk                                      
+              retention-days: 14  
