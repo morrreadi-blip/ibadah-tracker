@@ -512,6 +512,10 @@ body {
   user-select: none;
 }
 
+.prayer-status-chip:empty {
+  display: none;
+}
+
 .checklist-item.checked .prayer-status-chip,
 .prayer-status-chip.done {
   background: #ccfbf1;

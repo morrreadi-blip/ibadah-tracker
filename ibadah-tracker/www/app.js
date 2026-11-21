@@ -237,7 +237,7 @@ function renderHome() {
         <span class="prayer-name">${prayer.id}</span>
         <span class="prayer-time-sub">${prayerTime}</span>
       </span>
-      <span class="prayer-status-chip ${isChecked ? 'done' : ''}">${isChecked ? 'Sudah Sholat ✓' : 'Belum Sholat'}</span>
+      <span class="prayer-status-chip ${isChecked ? 'done' : ''}">${isChecked ? 'Sudah Sholat ✓' : ''}</span>
     `;
 
     li.appendChild(row);
@@ -357,7 +357,7 @@ function handleToggle(prayerId, checked, li) {
   const chip = li.querySelector('.prayer-status-chip');
   if (chip) {
     chip.classList.toggle('done', checked);
-    chip.textContent = checked ? 'Sudah Sholat ✓' : 'Belum Sholat';
+    chip.textContent = checked ? 'Sudah Sholat ✓' : '';
   }
   const wrapper = li.querySelector('.checkbox-wrapper');
   wrapper.classList.add('animate');
