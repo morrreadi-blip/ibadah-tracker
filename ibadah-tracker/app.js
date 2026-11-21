@@ -235,9 +235,7 @@ function renderHome() {
       <span class="prayer-icon">${prayer.icon}</span>
       <span class="prayer-label">
         <span class="prayer-name">${prayer.id}</span>
-        <span class="prayer-time-sub">${prayerTime}</span>
       </span>
-      <span class="prayer-status-chip ${isChecked ? 'done' : ''}">${isChecked ? 'Sudah Sholat ✓' : ''}</span>
     `;
 
     li.appendChild(row);
@@ -354,11 +352,6 @@ function playAlarmSound() {
 function handleToggle(prayerId, checked, li) {
   setDayPrayer(currentDate, prayerId, checked);
   li.classList.toggle('checked', checked);
-  const chip = li.querySelector('.prayer-status-chip');
-  if (chip) {
-    chip.classList.toggle('done', checked);
-    chip.textContent = checked ? 'Sudah Sholat ✓' : '';
-  }
   const wrapper = li.querySelector('.checkbox-wrapper');
   wrapper.classList.add('animate');
   setTimeout(() => wrapper.classList.remove('animate'), 300);
