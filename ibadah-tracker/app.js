@@ -2,6 +2,7 @@
 const STORAGE_KEY = 'ibadah_tracker_data';
 const ONBOARDING_KEY = 'ibadah_tracker_onboarded';
 const REMINDER_KEY = 'ibadah_tracker_reminders';
+const NOTIF_ENABLED_KEY = 'ibadah_tracker_notif_master_enabled';
 const LOCATION_KEY = 'ibadah_tracker_location';
 
 // Jadwal Sholat Kota Populer di Indonesia
@@ -138,13 +139,13 @@ function loadReminders() {
     const saved = JSON.parse(localStorage.getItem(REMINDER_KEY));
     if (saved && typeof saved === 'object') {
       PRAYERS.forEach(p => {
-        if (!saved[p.id]) saved[p.id] = { enabled: false, time: sched.times[p.id] || p.defaultTime };
+        if (!saved[p.id]) saved[p.id] = { enabled: true, time: sched.times[p.id] || p.defaultTime };
       });
       return saved;
     }
   } catch {}
   const defaults = {};
-  PRAYERS.forEach(p => { defaults[p.id] = { enabled: false, time: sched.times[p.id] || p.defaultTime }; });
+  PRAYERS.forEach(p => { defaults[p.id] = { enabled: true, time: sched.times[p.id] || p.defaultTime }; });
   return defaults;
 }
 function saveReminders(data) { localStorage.setItem(REMINDER_KEY, JSON.stringify(data)); }
@@ -163,6 +164,7 @@ function initOnboarding() {
     mainAppEl.classList.remove('hidden');
     initRekapDropdown();
     initStatsTabs();
+    initNotificationFeature();
     renderHome();
     renderRekap();
     return;
@@ -195,6 +197,7 @@ function finishOnboarding() {
     mainAppEl.classList.remove('hidden');
     initRekapDropdown();
     initStatsTabs();
+    initNotificationFeature();
     renderHome();
     renderRekap();
   }, 500);
@@ -382,52 +385,113 @@ function updateProgress(dayData) {
 }
 
 // ============================================
-// REMINDER NOTIFICATIONS
+// REMINDER NOTIFICATIONS & HP ALERT SYSTEM
 // ============================================
-function startReminderCheck() {
-  setInterval(checkReminders, 30000);
-  checkReminders();
+function isNotificationEnabled() {
+  const saved = localStorage.getItem(NOTIF_ENABLED_KEY);
+  if (saved !== null) {
+    return saved === 'true';
+  }
+  return ('Notification' in window && Notification.permission === 'granted');
 }
 
-function checkReminders() {
-  const reminders = loadReminders();
-  const now = new Date();
-  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+function setNotificationEnabled(enabled) {
+  localStorage.setItem(NOTIF_ENABLED_KEY, enabled ? 'true' : 'false');
+}
 
-  PRAYERS.forEach(prayer => {
-    const rem = reminders[prayer.id];
-    if (!rem.enabled) return;
-    const [h,m] = rem.time.split(':').map(Number);
-    const target = h * 60 + m;
-    if (Math.abs(nowMinutes - target) < 1) {
-      const firedKey = `fired_${prayer.id}_${fmtDate(now)}_${rem.time}`;
-      if (!sessionStorage.getItem(firedKey)) {
-        sessionStorage.setItem(firedKey, 'true');
-        fireNotification(prayer);
+function updateNotificationUI() {
+  const card = document.getElementById('notif-reminder-card');
+  const toggleBtn = document.getElementById('btn-notif-toggle');
+  const label = document.getElementById('notif-status-label');
+  if (!card || !toggleBtn || !label) return;
+
+  const enabled = isNotificationEnabled();
+  const hasNotif = ('Notification' in window);
+  const perm = hasNotif ? Notification.permission : 'unsupported';
+
+  if (perm === 'denied') {
+    toggleBtn.setAttribute('aria-checked', 'false');
+    card.classList.remove('active');
+    label.textContent = '⚠️ Izin notifikasi diblokir di HP (Cek Pengaturan)';
+    label.style.color = '#ef4444';
+  } else if (enabled) {
+    toggleBtn.setAttribute('aria-checked', 'true');
+    card.classList.add('active');
+    label.textContent = '🟢 Aktif (Otomatis saat Adzan)';
+    label.style.color = '#0f766e';
+  } else {
+    toggleBtn.setAttribute('aria-checked', 'false');
+    card.classList.remove('active');
+    label.textContent = 'Belum Aktif (Ketuk untuk Aktifkan)';
+    label.style.color = '#64748b';
+  }
+}
+
+function toggleNotificationPermission() {
+  getAudioContext();
+  const current = isNotificationEnabled();
+
+  if (current) {
+    setNotificationEnabled(false);
+    updateNotificationUI();
+    return;
+  }
+
+  // User menyalakan notifikasi
+  if (!('Notification' in window)) {
+    setNotificationEnabled(true);
+    updateNotificationUI();
+    testNotification();
+    return;
+  }
+
+  if (Notification.permission === 'granted') {
+    setNotificationEnabled(true);
+    updateNotificationUI();
+    testNotification();
+  } else if (Notification.permission === 'denied') {
+    alert('Izin notifikasi diblokir pada HP Anda. Silakan buka Pengaturan HP > Aplikasi > Ibadah Tracker > Izin Notifikasi untuk mengaktifkannya.');
+    setNotificationEnabled(false);
+    updateNotificationUI();
+  } else {
+    Notification.requestPermission().then(permission => {
+      if (permission === 'granted') {
+        setNotificationEnabled(true);
+        updateNotificationUI();
+        testNotification();
+      } else {
+        setNotificationEnabled(false);
+        updateNotificationUI();
+        if (permission === 'denied') {
+          alert('Izin notifikasi ditolak. Anda dapat mengaktifkannya kapan saja di pengaturan HP.');
+        }
       }
-    }
-  });
+    }).catch(() => {
+      setNotificationEnabled(true);
+      updateNotificationUI();
+    });
+  }
 }
 
-function fireNotification(prayer) {
-  // 1. Suara Alarm / Chime Adzan
+function testNotification() {
+  // 1. Suara Alarm Chime
   playAlarmSound();
 
-  // 2. Getar Alarm Handphone
+  // 2. Getar HP
   if (navigator.vibrate) {
     try {
-      navigator.vibrate([400, 200, 400, 200, 600]);
+      navigator.vibrate([400, 200, 400]);
     } catch (e) {}
   }
 
-  // 3. Notifikasi Masuk ke Handphone
-  const title = `🕌 Waktunya Sholat ${prayer.id}!`;
+  // 3. Status Bar System Notification
+  const title = '🔔 Notifikasi Waktu Sholat Aktif!';
   const options = {
-    body: `Panggilan waktu sholat ${prayer.id} (${prayer.hint}). Yuk tunaikan ibadah tepat waktu.`,
+    body: 'Alhamdulillah! Alarm, getaran, dan notifikasi ke HP Anda telah aktif dan siap mengingatkan waktu sholat.',
     icon: 'icon-192.png',
     badge: 'icon-192.png',
-    tag: `prayer-${prayer.id}`,
-    vibrate: [400, 200, 400, 200, 600],
+    tag: 'test-notification',
+    vibrate: [400, 200, 400],
     renotify: true
   };
 
@@ -442,6 +506,122 @@ function fireNotification(prayer) {
   } else if ('Notification' in window && Notification.permission === 'granted') {
     new Notification(title, options);
   }
+}
+
+let reminderTimer = null;
+function startReminderCheck() {
+  if (reminderTimer) clearInterval(reminderTimer);
+  reminderTimer = setInterval(checkReminders, 20000);
+  checkReminders();
+}
+
+function checkReminders() {
+  if (!isNotificationEnabled()) return;
+
+  const sched = getCitySchedule(currentCity);
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const todayStr = fmtDate(now);
+
+  PRAYERS.forEach(prayer => {
+    const pTime = sched.times[prayer.id] || prayer.defaultTime;
+    const [h, m] = pTime.split(':').map(Number);
+    const prayerMinutes = h * 60 + m;
+
+    if (Math.abs(currentMinutes - prayerMinutes) <= 0) {
+      const firedKey = `prayer_fired_${prayer.id}_${todayStr}_${pTime}`;
+      if (!sessionStorage.getItem(firedKey) && !localStorage.getItem(firedKey)) {
+        sessionStorage.setItem(firedKey, 'true');
+        localStorage.setItem(firedKey, 'true');
+        fireNotification(prayer, pTime);
+      }
+    }
+  });
+}
+
+function fireNotification(prayer, pTime) {
+  const sched = getCitySchedule(currentCity);
+  const timeStr = pTime || (sched.times[prayer.id] || prayer.defaultTime);
+
+  // 1. Suara Alarm / Chime Adzan
+  playAlarmSound();
+
+  // 2. Getar Alarm Handphone
+  if (navigator.vibrate) {
+    try {
+      navigator.vibrate([500, 250, 500, 250, 800]);
+    } catch (e) {}
+  }
+
+  // 3. Notifikasi Masuk ke Handphone
+  const title = `🕌 Waktunya Sholat ${prayer.id}! (${timeStr})`;
+  const options = {
+    body: `Allahu Akbar! Sudah masuk waktu sholat ${prayer.id} untuk wilayah ${currentCity}. Yuk ambil wudhu & sholat tepat waktu!`,
+    icon: 'icon-192.png',
+    badge: 'icon-192.png',
+    tag: `prayer-${prayer.id}-${timeStr}`,
+    vibrate: [500, 250, 500, 250, 800],
+    renotify: true,
+    requireInteraction: true
+  };
+
+  if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
+    navigator.serviceWorker.ready.then(reg => {
+      reg.showNotification(title, options);
+    }).catch(() => {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(title, options);
+      }
+    });
+  } else if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification(title, options);
+  }
+}
+
+function initNotificationFeature() {
+  const toggleBtn = document.getElementById('btn-notif-toggle');
+  const testBtn = document.getElementById('btn-notif-test');
+  const cardHeader = document.querySelector('.notif-card-header');
+
+  if (toggleBtn && !toggleBtn.dataset.bound) {
+    toggleBtn.dataset.bound = 'true';
+    toggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleNotificationPermission();
+    });
+  }
+
+  if (cardHeader && !cardHeader.dataset.bound) {
+    cardHeader.dataset.bound = 'true';
+    cardHeader.addEventListener('click', (e) => {
+      if (e.target.closest('#btn-notif-toggle')) return;
+      toggleNotificationPermission();
+    });
+  }
+
+  if (testBtn && !testBtn.dataset.bound) {
+    testBtn.dataset.bound = 'true';
+    testBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      getAudioContext();
+      if ('Notification' in window && Notification.permission !== 'granted') {
+        Notification.requestPermission().then(perm => {
+          if (perm === 'granted') {
+            setNotificationEnabled(true);
+            updateNotificationUI();
+          }
+          testNotification();
+        }).catch(() => testNotification());
+      } else {
+        setNotificationEnabled(true);
+        updateNotificationUI();
+        testNotification();
+      }
+    });
+  }
+
+  updateNotificationUI();
+  startReminderCheck();
 }
 
 // ============================================
@@ -818,4 +998,5 @@ function autoDetectLocation() {
 // ============================================
 autoDetectLocation();
 startLiveTimer();
+initNotificationFeature();
 initOnboarding();

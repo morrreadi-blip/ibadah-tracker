@@ -182,7 +182,29 @@
         </div>
       </div>
 
-      <!-- 2. Rekap Ibadah Mingguan & Statistik Terintegrasi -->
+      <!-- 2. Pengingat Notifikasi Adzan -->
+      <section class="notif-reminder-card" id="notif-reminder-card">
+        <div class="notif-card-header">
+          <div class="notif-icon-wrap">
+            <span class="notif-bell-icon">🔔</span>
+          </div>
+          <div class="notif-text-wrap">
+            <h4 class="notif-title">Notifikasi Waktu Sholat</h4>
+            <p class="notif-status-label" id="notif-status-label">Belum Aktif (Ketuk untuk Aktifkan)</p>
+          </div>
+          <!-- Switch Toggle Button -->
+          <button type="button" class="notif-toggle-switch" id="btn-notif-toggle" role="switch" aria-label="Aktifkan Notifikasi Sholat" aria-checked="false">
+            <span class="toggle-knob"></span>
+          </button>
+        </div>
+
+        <div class="notif-card-footer">
+          <span class="notif-hint-text">📱 Alarm, getar & notifikasi HP otomatis saat tiba waktu sholat 5 waktu.</span>
+          <button type="button" class="btn-test-notif" id="btn-notif-test">Tes Notifikasi HP</button>
+        </div>
+      </section>
+
+      <!-- 3. Rekap Ibadah Mingguan & Statistik Terintegrasi -->
       <section class="rekap-section" id="rekap-section">
         <div class="rekap-header-row">
           <h3 class="section-title">📊 Rekap Mingguan</h3>

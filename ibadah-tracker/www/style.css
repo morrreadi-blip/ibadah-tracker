@@ -557,6 +557,153 @@ body {
 .progress-card.completed .progress-bar-fill { background: linear-gradient(90deg, #34d399, #059669); }
 
 /* ============================================
+   PENGINGAT NOTIFIKASI ADZAN CARD
+   ============================================ */
+.notif-reminder-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.25s ease;
+}
+
+.notif-reminder-card.active {
+  border-color: #ccfbf1;
+  background: linear-gradient(180deg, #ffffff 0%, #f0fdfa 100%);
+  box-shadow: 0 2px 8px rgba(15, 118, 110, 0.06);
+}
+
+.notif-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.notif-icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.25s ease;
+}
+
+.notif-reminder-card.active .notif-icon-wrap {
+  background: #ccfbf1;
+}
+
+.notif-bell-icon {
+  font-size: 1.25rem;
+}
+
+.notif-text-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.notif-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.notif-status-label {
+  font-size: 0.72rem;
+  color: #64748b;
+  margin: 3px 0 0;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.notif-reminder-card.active .notif-status-label {
+  color: #0f766e;
+  font-weight: 600;
+}
+
+/* Modern Switch Toggle Button */
+.notif-toggle-switch {
+  width: 46px;
+  height: 26px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  border: none;
+  position: relative;
+  cursor: pointer;
+  padding: 2px;
+  transition: background-color 0.25s ease;
+  flex-shrink: 0;
+}
+
+.notif-toggle-switch .toggle-knob {
+  display: block;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.notif-toggle-switch[aria-checked="true"] {
+  background: #0f766e;
+}
+
+.notif-toggle-switch[aria-checked="true"] .toggle-knob {
+  transform: translateX(20px);
+}
+
+/* Card Footer */
+.notif-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.notif-hint-text {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  line-height: 1.35;
+  flex: 1;
+}
+
+.btn-test-notif {
+  background: #f1f5f9;
+  color: #0f766e;
+  border: 1px solid #ccfbf1;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.btn-test-notif:hover {
+  background: #0f766e;
+  color: #ffffff;
+}
+
+.btn-test-notif:active {
+  transform: scale(0.96);
+}
+
+/* ============================================
    REKAP PAGE
    ============================================ */
 .app-header {
